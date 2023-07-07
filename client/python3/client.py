@@ -31,7 +31,9 @@ class Arduino8088Client:
         CmdGetCycleStatus = (0x14, 0)
         CmdInvalid = (0x15, 0)
 
-    def __init__(self, serial_port: str) -> None:
+    def __init__(self, serial_port: str, debug: bool) -> None:
+        self.debug = debug
+
         self.fd = serial.serial_for_url(serial_port, baudrate=1000000, timeout=0.11)
 
     def _send_command(self, command: Command, data: bytearray) -> bool:
@@ -49,9 +51,12 @@ class Arduino8088Client:
             return rc
 
         if rc[-1] == 0x00:  # error
+            if self.debug:
+                print('Arduino8088 returned error state', file=sys.stderr)
             return None
 
-        print('out of sync', file=sys.stderr)
+        if self.debug:
+            print('Arduino8088 out of sync', file=sys.stderr)
 
         time.sleep(0.11)
 
@@ -76,7 +81,7 @@ class Arduino8088Client:
         if self._send_command(Arduino8088Client.Command.CmdReset, None) == False:
             return None
 
-        return self._receive_n(1) == True
+        return self._receive_n(1) == [ 0x01 ]
 
     # load the registers with a certain value
     def cmd_load(self, AX: int, BX: int, CX: int, DX: int, SS: int, SP: int, FLAGS: int, IP: int, CS: int, DS: int, ES: int, BP: int, SI: int, DI: int) -> bool:
@@ -100,10 +105,17 @@ class Arduino8088Client:
         if self._send_command(Arduino8088Client.Command.CmdLoad, None) == False:
             return None
 
-        return self._receive_n(1) == True
+        return self._receive_n(1) == [ 0x01 ]
 
-a = Arduino8088Client('/dev/ttyUSB1')
+    def cmd_cycle(self) -> bool:
+        if self._send_command(Arduino8088Client.Command.CmdCycle, None) == False:
+            return None
+
+        return self._receive_n(1) == [ 0x01 ]
+
+a = Arduino8088Client('/dev/ttyUSB1', True)
 
 print(a.cmd_version())
 print(a.cmd_reset())
 print(a.cmd_load(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14))
+print(a.cmd_cycle())
