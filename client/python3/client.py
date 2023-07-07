@@ -113,9 +113,33 @@ class Arduino8088Client:
 
         return self._receive_n(1) == [ 0x01 ]
 
+    def cmd_read_address(self) -> Optional[int]:
+        if self._send_command(Arduino8088Client.Command.CmdReadAddress, None) == False:
+            return None
+
+        rc = self._receive_n(4)
+
+        if rc == None:
+            return None
+
+        return rc[0] | (rc[1] << 8) | (rc[2] << 16)
+
+    def cmd_read_status(self) -> Optional[int]:
+        if self._send_command(Arduino8088Client.Command.CmdReadStatus, None) == False:
+            return None
+
+        rc = self._receive_n(2)
+
+        if rc == None:
+            return None
+
+        return rc[0]
+
 a = Arduino8088Client('/dev/ttyUSB1', True)
 
 print(a.cmd_version())
 print(a.cmd_reset())
 print(a.cmd_load(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14))
 print(a.cmd_cycle())
+print(a.cmd_read_address())
+print(a.cmd_read_status())
