@@ -38,7 +38,7 @@ class Arduino8088Client:
     def __init__(self, serial_port: str, debug: bool) -> None:
         self.debug = debug
 
-        self.fd = serial.serial_for_url(serial_port, baudrate=1000000, timeout=0.11)
+        self.fd = serial.serial_for_url(serial_port, baudrate=1000000, timeout=1.)
 
     def _send_command(self, command: Command, data: bytearray) -> bool:
         self.fd.write(command.value[0].to_bytes(1, 'big'))
@@ -50,6 +50,9 @@ class Arduino8088Client:
 
     def _receive_n(self, n) -> Optional[list[int]]:
         rc = [ c for c in self.fd.read(n) ]
+
+        if self.debug:
+            print('from serial:', rc, file=sys.stderr)
 
         if rc[-1] == 0x01:  # ok
             return rc
@@ -161,13 +164,31 @@ class Arduino8088Client:
 
         return rc[0]
 
+    # returns a list with the contents of each register (14 of them)
+    def cmd_store(self) -> Optional[list[int]]:
+        if self._send_command(Arduino8088Client.Command.CmdStore, None) == False:
+            return None
+
+        rc = self._receive_n(29)
+
+        if rc == None:
+            return None
+
+        out = []
+
+        for i in range(0, 14):
+            out.append((rc[i * 2 + 1] << 8) | rc[i * 2 + 0])
+
+        return out
+
 a = Arduino8088Client('/dev/ttyUSB1', True)
 
-print(a.cmd_version())
-print(a.cmd_reset())
-print(a.cmd_load(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14))
-print(a.cmd_cycle())
-print(a.cmd_read_address())
-print(a.cmd_read_status())
-print(a.cmd_read_8288_command())
-print(a.cmd_read_8288_control())
+print('version', a.cmd_version())
+print('reset', a.cmd_reset())
+print('load', a.cmd_load(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14))
+print('cycle', a.cmd_cycle())
+print('read address', a.cmd_read_address())
+print('read status', a.cmd_read_status())
+print('read 8288 command', a.cmd_read_8288_command())
+print('read 8288 control', a.cmd_read_8288_control())
+print('store', a.cmd_store())
