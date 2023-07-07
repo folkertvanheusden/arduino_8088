@@ -1,5 +1,9 @@
 #! /usr/bin/python3
 
+# Required: pyserial
+
+# This code was written by Folkert van Heusden and released under the GPLv3 license.
+
 from enum import Enum
 import serial
 import sys
