@@ -43,6 +43,8 @@ class Arduino8088Client:
     def _send_command(self, command: Command, data: bytearray) -> bool:
         self.fd.write(command.value[0].to_bytes(1, 'big'))
 
+        assert (data is None and command.value[1] == 0) or len(data) == command.value[1]
+
         if not data is None:
             self.fd.write(data)
 
@@ -109,7 +111,7 @@ class Arduino8088Client:
 
         assert len(out) == 28
 
-        if self._send_command(Arduino8088Client.Command.CmdLoad, None) == False:
+        if self._send_command(Arduino8088Client.Command.CmdLoad, out) == False:
             return None
 
         return self._receive_n(1) == [ 0x01 ]
