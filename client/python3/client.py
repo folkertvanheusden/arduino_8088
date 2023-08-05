@@ -56,6 +56,11 @@ class Arduino8088Client:
         if self.debug:
             print('from serial:', rc, file=sys.stderr)
 
+        if len(rc) == 0:
+            if self.debug:
+                print('Nothing from serial port', file=sys.stderr)
+            return None
+
         if rc[-1] == 0x01:  # ok
             return rc
 
@@ -183,7 +188,7 @@ class Arduino8088Client:
 
         return out
 
-a = Arduino8088Client('/dev/ttyUSB1', True)
+a = Arduino8088Client('/dev/ttyUSB0', True)
 
 print('version', a.cmd_version())
 print('reset', a.cmd_reset())
